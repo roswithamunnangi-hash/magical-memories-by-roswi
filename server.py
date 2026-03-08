@@ -162,12 +162,19 @@ class MemoryTilesHandler(SimpleHTTPRequestHandler):
             self.send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
             return
         except NotificationError as exc:
-            order_record["notification"] = build_notification_state(
-                status="failed",
-                details=str(exc),
-            )
+            details = str(exc)
+            if is_network_error(details):
+                order_record["notification"] = build_notification_state(
+                    status="queued",
+                    details=f"Network issue detected. Seller email queued for retry. Original error: {details}",
+                )
+            else:
+                order_record["notification"] = build_notification_state(
+                    status="failed",
+                    details=details,
+                )
             persist_order(order_record)
-            print(f"Email notification failed for {order_record['orderId']}: {exc}", file=sys.stderr)
+            print(f"Email notification issue for {order_record['orderId']}: {details}", file=sys.stderr)
         except Exception:
             self.send_json(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -589,6 +596,19 @@ def deliver_email(message: EmailMessage) -> None:
     except Exception as exc:
         raise NotificationError(f"Seller email was not delivered: {exc}") from exc
 
+def is_network_error(error_text: str) -> bool:
+    lowered = error_text.lower()
+    return any(
+        marker in lowered
+        for marker in (
+            "network is unreachable",
+            "name or service not known",
+            "temporary failure",
+            "connection timed out",
+            "timed out",
+            "no route to host",
+        )
+    )
 
 def sanitize_name(value: str) -> str:
     return re.sub(r"[^a-zA-Z0-9_-]+", "-", value).strip("-_").lower()
@@ -621,6 +641,8 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
 
 
 

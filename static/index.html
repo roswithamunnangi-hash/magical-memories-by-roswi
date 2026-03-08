@@ -6,7 +6,7 @@
     <title>Magical Memories by Roswi</title>
     <meta
       name="description"
-      content="Custom 2.5 x 2.5 square photo magnets with cart and photo uploads."
+      content="Custom 2.5 x 2.5 square photo magnets with cart, payments, and photo uploads."
     />
     <link rel="stylesheet" href="./styles.css" />
     <script defer src="./script.js"></script>
@@ -22,23 +22,24 @@
           <div class="topbar-links">
             <a
               class="nav-link"
-              href="https://www.instagram.com/MagicalMemories_byRoswi/"
+              href="https://www.instagram.com/magical_memories_byroswi/"
               target="_blank"
               rel="noreferrer"
             >
-              @MagicalMemories_byRoswi
+              @magical_memories_byroswi
             </a>
-            <a class="nav-link" href="#order">Start an Order</a>
+            <a class="nav-link" href="#contact">Contact Us</a>
+            <a class="nav-link" href="#order">Order Now</a>
           </div>
         </nav>
 
         <div class="hero-grid">
           <div class="hero-copy">
-            <p class="eyebrow">Custom 2.5"x2.5" square magnets</p>
-            <h1>Build your magnet order in minutes.</h1>
+            <p class="eyebrow">Custom 2.5&quot;x2.5&quot; square magnets</p>
+            <h1>Build your order and pay online.</h1>
             <p class="hero-text">
-              Add your favorite magnet styles to cart, upload your photos, and place one complete
-              order for Magical Memories by Roswi.
+              Add your favorite styles to cart, upload your photos, and place one complete order.
+              Choose online payment or pay-later checkout.
             </p>
 
             <div class="hero-actions">
@@ -48,78 +49,66 @@
 
             <a
               class="instagram-card"
-              href="https://www.instagram.com/MagicalMemories_byRoswi/"
+              href="https://www.instagram.com/magical_memories_byroswi/"
               target="_blank"
               rel="noreferrer"
             >
               <span class="instagram-label">Instagram</span>
-              <strong>@MagicalMemories_byRoswi</strong>
+              <strong>@magical_memories_byroswi</strong>
               <em>See recent work and message us directly</em>
             </a>
 
             <div class="trust-row">
               <div>
-                <strong>Flat pricing</strong>
-                <span>From $8.99 per 2.5"x2.5" magnet</span>
+                <strong>Single Magnet</strong>
+                <span>2.5&quot;x2.5&quot; square magnet at $2.99 each</span>
               </div>
               <div>
-                <strong>Cart checkout</strong>
-                <span>Add multiple magnet styles in one order</span>
+                <strong>Set Pricing</strong>
+                <span>2.5&quot;x2.5&quot; square magnet (set of 9) at $25</span>
               </div>
               <div>
-                <strong>Photo upload</strong>
-                <span>Upload images directly while ordering</span>
+                <strong>Online Payments</strong>
+                <span>Take orders and payments from your website</span>
               </div>
             </div>
           </div>
 
           <aside class="hero-display" aria-label="Magnet inspiration">
-            <figure class="display-card display-card-large">
-              <img
-                src="https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1400"
-                alt="Family photos on a wall"
-                loading="lazy"
-              />
-              <figcaption>
-                <strong>Memory Walls</strong>
-                <span>Turn your best moments into beautiful magnetic displays.</span>
-              </figcaption>
-            </figure>
-            <div class="display-column">
-              <figure class="display-card display-card-small">
-                <img
-                  src="https://images.unsplash.com/photo-1609220136736-443140cffec6?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1400"
-                  alt="Printed photos closeup"
-                  loading="lazy"
-                />
-                <figcaption>
-                  <strong>Gift Ready</strong>
-                  <span>Perfect for birthdays, baby showers, and anniversaries.</span>
-                </figcaption>
-              </figure>
-              <figure class="display-card display-card-small">
-                <img
-                  src="https://images.unsplash.com/photo-1471341971476-ae15ff5dd4ea?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1400"
-                  alt="Colorful family memories"
-                  loading="lazy"
-                />
-                <figcaption>
-                  <strong>Made With Care</strong>
-                  <span>Custom crafted by Magical Memories by Roswi.</span>
-                </figcaption>
-              </figure>
+            <div class="carousel" id="topCarousel">
+              <div class="carousel-track" id="carouselTrack"></div>
+              <button class="carousel-btn" id="carouselPrev" type="button" aria-label="Previous image">&#10094;</button>
+              <button class="carousel-btn" id="carouselNext" type="button" aria-label="Next image">&#10095;</button>
+              <div class="carousel-dots" id="carouselDots" aria-label="Carousel indicators"></div>
             </div>
           </aside>
         </div>
       </header>
 
       <main>
+        <section class="section" id="about">
+          <div class="section-heading">
+            <p class="section-tag">About Me</p>
+            <h2>Meet Roswitha</h2>
+          </div>
+          <div class="about-card">
+            <p>
+              Hi! My name is Roswitha, and I’m a 10-year-old artist. I love drawing, making crafts,
+              and turning my ideas into colorful creations. I started my magnet business because I
+              enjoy making art that people can cherish and see every day on their fridge or office
+              desk. Each magnet is made with creativity, care, and lots of fun. My goal is to make
+              little pieces of art that bring smiles to people’s faces. Thank you for supporting my
+              small business!
+            </p>
+          </div>
+        </section>
+
         <section class="section section-product" id="packs">
           <div class="section-heading">
             <p class="section-tag">Magnet Catalog</p>
             <h2>Choose your favorite square magnets</h2>
             <p>
-              All magnets are custom 2.5"x2.5". Add products to cart, then upload one photo per
+              All magnets are custom 2.5&quot;x2.5&quot;. Add products to cart, then upload one photo per
               magnet at checkout.
             </p>
           </div>
@@ -134,43 +123,18 @@
             <ul id="cartItems" class="cart-items"></ul>
             <p id="emptyCartMessage" class="subtle-copy">Your cart is empty. Add a magnet to begin.</p>
             <div class="cart-totals">
-              <div><span>Items</span><strong id="cartItemCount">0</strong></div>
+              <div><span>Total magnets</span><strong id="cartItemCount">0</strong></div>
               <div><span>Subtotal</span><strong id="cartSubtotal">$0.00</strong></div>
             </div>
-          </div>
-        </section>
-
-        <section class="section section-steps">
-          <div class="section-heading">
-            <p class="section-tag">How It Works</p>
-            <h2>Three-step order flow</h2>
-          </div>
-
-          <div class="steps-grid">
-            <article class="step-card">
-              <span>01</span>
-              <h3>Add to cart</h3>
-              <p>Pick your magnet styles and quantities.</p>
-            </article>
-            <article class="step-card">
-              <span>02</span>
-              <h3>Upload your photos</h3>
-              <p>Add at least one photo for each magnet in your cart.</p>
-            </article>
-            <article class="step-card">
-              <span>03</span>
-              <h3>Send the order</h3>
-              <p>Submit everything in one checkout form.</p>
-            </article>
           </div>
         </section>
 
         <section class="section section-order" id="order">
           <div class="section-heading">
             <p class="section-tag">Checkout</p>
-            <h2>Complete your order</h2>
+            <h2>Place your order</h2>
             <p>
-              Customers can submit details, upload photos, and include notes in one checkout step.
+              Complete your details, choose payment, upload photos, and submit your order.
             </p>
           </div>
 
@@ -217,6 +181,24 @@
                     <input type="text" name="zip_code" placeholder="60612" required />
                   </label>
                 </div>
+              </div>
+
+              <div class="form-section">
+                <h3>Payment details</h3>
+                <div class="payment-options">
+                  <label class="radio-field">
+                    <input type="radio" name="payment_method" value="online" required checked />
+                    <span>Pay now online (Card / Stripe Checkout)</span>
+                  </label>
+                  <label class="radio-field">
+                    <input type="radio" name="payment_method" value="pay_later" required />
+                    <span>Pay later (manual confirmation)</span>
+                  </label>
+                </div>
+                <p class="subtle-copy">
+                  If you choose online payment, you will be redirected to secure checkout after the
+                  order is saved.
+                </p>
               </div>
 
               <div class="form-section">
@@ -272,15 +254,15 @@
               <dl class="summary-list">
                 <div>
                   <dt>Product</dt>
-                  <dd id="summaryProduct">2.5"x2.5" Square Magnet</dd>
+                  <dd id="summaryProduct">2.5&quot;x2.5&quot; Square Magnet</dd>
                 </div>
                 <div>
-                  <dt>Items in cart</dt>
+                  <dt>Total magnets</dt>
                   <dd id="summaryQuantity">1</dd>
                 </div>
                 <div>
                   <dt>Unit price</dt>
-                  <dd id="summaryUnitPrice">Varies</dd>
+                  <dd id="summaryUnitPrice">From $2.99</dd>
                 </div>
                 <div>
                   <dt>Photo minimum</dt>
@@ -302,6 +284,33 @@
               </p>
             </aside>
           </div>
+        </section>
+
+        <section class="section" id="contact">
+          <div class="section-heading">
+            <p class="section-tag">Contact Us</p>
+            <h2>Questions? Send us a message</h2>
+            <p>Use this form to ask anything about your magnet order.</p>
+          </div>
+
+          <form id="contactForm" class="contact-form" novalidate>
+            <div class="form-grid">
+              <label class="field">
+                <span>Your name</span>
+                <input type="text" name="name" required placeholder="Your name" />
+              </label>
+              <label class="field">
+                <span>Your email</span>
+                <input type="email" name="email" required placeholder="you@example.com" />
+              </label>
+              <label class="field field-wide">
+                <span>Message</span>
+                <textarea name="message" rows="5" required placeholder="How can we help you?"></textarea>
+              </label>
+            </div>
+            <button class="button button-primary" id="contactSubmitButton" type="submit">Send message</button>
+            <p id="contactStatus" class="form-status" role="status" aria-live="polite"></p>
+          </form>
         </section>
       </main>
     </div>
