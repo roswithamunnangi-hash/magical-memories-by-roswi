@@ -1,66 +1,47 @@
 ﻿# Magical Memories by Roswi Shop
 
-## Updated Features
+## Included in this update
 
-- Custom hero text:
-  - Heading: **Handcrafted custom Magnets**
-  - Subheader: **Some memories deserve more than your camerca roll**
-- Top-right navigation with:
-  - About Me page link
-  - Cart icon/page link
-  - Instagram link
-- Magnet catalog + cart with pricing:
-  - 2.5"x2.5" square magnet: **$2.99 each**
-  - 2.5"x2.5" square magnet (set of 9): **$25**
-- Catalog image zoom-out styling for better visibility
-- Photo upload crop tools:
-  - Auto-crop to square option
-  - Manual "Crop selected photos now" button
-- Checkout is now **online payment only**
-- Contact form posts to backend API and sends email notifications
-- Order emails + contact emails use the same SMTP server settings
-- Network SMTP outages are handled as `queued` so orders/messages are still saved
+- Top nav pages: About Me, Products, Cart
+- Instagram icon added before Instagram handle
+- Footer social row: "Follow us on social media"
+- Removed top text: `CUSTOM 2.5"x2.5" SQUARE MAGNETS`
+- Catalog title changed to: `Customize your magnets`
+- Removed old trust-card section
+- Online payment only (pay-later removed)
+- Contact form now sends through backend email API
+- Manual photo crop flow added with crop modal (zoom + position sliders)
+- Catalog images zoomed out for better visibility
 
-## Logo File
+## File paths for your attached images
 
-Website now looks for this logo file first:
+Place these files in `static/assets/`:
 
-`static/assets/logo-attached.png`
+- `logo-attached.png` (your logo image)
+- `about-roswitha.jpg` (your profile photo for About Me)
 
-If missing, it falls back to `static/assets/logo.svg`.
+Carousel/catalog photos (already wired):
 
-Place your attached logo image at:
+- `static/assets/photos/magnet-photo-1.png`
+- `static/assets/photos/magnet-photo-2.png`
+- `static/assets/photos/magnet-photo-3.png`
+- `static/assets/photos/magnet-photo-4.png`
+- `static/assets/photos/magnet-photo-5.png`
 
-`static/assets/logo-attached.png`
+## Required Render environment variables for email + payment
 
-## Required Configuration (Render Environment Variables)
-
-Set these variables in Render for emails and payments:
-
-- `HOST=0.0.0.0`
-- `PORT=10000`
-- `DATA_DIR=./data`
-- `STORE_NAME=Magical Memories by Roswi`
-- `PRODUCT_NAME=2.5"x2.5" square magnet`
-- `UNIT_PRICE_USD=2.99`
-- `PUBLIC_BASE_URL=https://YOUR-SERVICE.onrender.com`
-- `PAYMENT_CHECKOUT_URL=https://YOUR-PAYMENT-LINK`
-
-Email settings (required for order + contact emails):
-
-- `ORDER_NOTIFICATION_TO=youremail@gmail.com`
-- `CONTACT_NOTIFICATION_TO=youremail@gmail.com` (optional; falls back to ORDER_NOTIFICATION_TO)
+- `ORDER_NOTIFICATION_TO=you@example.com`
+- `CONTACT_NOTIFICATION_TO=you@example.com` (optional; fallback uses ORDER_NOTIFICATION_TO)
 - `SMTP_HOST=smtp.gmail.com`
 - `SMTP_PORT=587`
-- `SMTP_USERNAME=youremail@gmail.com`
+- `SMTP_USERNAME=you@example.com`
 - `SMTP_PASSWORD=YOUR_APP_PASSWORD`
-- `SMTP_FROM_EMAIL=youremail@gmail.com`
+- `SMTP_FROM_EMAIL=you@example.com`
 - `SMTP_USE_TLS=true`
 - `SMTP_USE_SSL=false`
+- `PAYMENT_CHECKOUT_URL=https://your-payment-link`
 
-## Gmail Note
-
-If using Gmail, use a Google **App Password** (not your normal account password).
+If using Gmail, `SMTP_PASSWORD` must be a Google App Password.
 
 ## APIs
 
@@ -68,30 +49,10 @@ If using Gmail, use a Google **App Password** (not your normal account password)
 - `POST /api/contact`
 - `GET /api/health`
 
-## Files Updated
+## Updated files
 
 - `static/index.html`
 - `static/styles.css`
 - `static/script.js`
 - `server.py`
 - `README.md`
-
-## Redeploy Steps
-
-1. Commit and push:
-
-```powershell
-git add .
-git commit -m "Update logo/nav/crop/contact/email/payment flow"
-git push
-```
-
-2. In Render:
-- Open your service
-- Add/update environment variables above
-- Click **Manual Deploy** -> **Deploy latest commit**
-
-3. Test:
-- Place one order
-- Submit one contact message
-- Verify emails received in your inbox

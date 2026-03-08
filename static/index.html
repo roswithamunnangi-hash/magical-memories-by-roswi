@@ -26,42 +26,28 @@
           </a>
           <div class="topbar-links">
             <a class="nav-link" href="#about">About Me</a>
+            <a class="nav-link" href="#packs">Products</a>
             <a class="nav-link nav-cart" href="#cart-page" aria-label="Go to cart">🛒 Cart</a>
             <a
-              class="nav-link"
+              class="nav-link nav-insta"
               href="https://www.instagram.com/magical_memories_byroswi/"
               target="_blank"
               rel="noreferrer"
             >
-              @magical_memories_byroswi
+              <span class="insta-icon" aria-hidden="true">◎</span>
+              <span>@magical_memories_byroswi</span>
             </a>
           </div>
         </nav>
 
         <div class="hero-grid">
           <div class="hero-copy">
-            <p class="eyebrow">Custom 2.5&quot;x2.5&quot; square magnets</p>
             <h1>Handcrafted custom Magnets</h1>
             <p class="hero-text">Some memories deserve more than your camerca roll</p>
 
             <div class="hero-actions">
               <a class="button button-primary" href="#packs">Shop now</a>
               <a class="button button-secondary" href="#order">Checkout</a>
-            </div>
-
-            <div class="trust-row">
-              <div>
-                <strong>Single Magnet</strong>
-                <span>2.5&quot;x2.5&quot; square magnet at $2.99 each</span>
-              </div>
-              <div>
-                <strong>Set Pricing</strong>
-                <span>2.5&quot;x2.5&quot; square magnet (set of 9) at $25</span>
-              </div>
-              <div>
-                <strong>Secure checkout</strong>
-                <span>Take orders and payments from your website</span>
-              </div>
             </div>
           </div>
 
@@ -81,22 +67,31 @@
           <div class="section-heading">
             <p class="section-tag">About Me</p>
           </div>
-          <div class="about-card">
-            <p>Hi! My name is Roswitha, and I’m a 10-year-old artist.</p>
-            <p>I love drawing, making crafts, and turning my ideas into colorful creations.</p>
-            <p>I started my magnet business because I enjoy making art that people can cherish and see every day on their fridge or office desk.</p>
-            <p>Each magnet is made with creativity, care, and lots of fun.</p>
-            <p class="about-catch">Tiny magnets. Big smiles.</p>
-            <p class="about-catch">Little memories, made magical.</p>
-            <p>My goal is to make little pieces of art that bring smiles to people’s faces.</p>
-            <p>Thank you for supporting my small business!</p>
+          <div class="about-layout">
+            <img
+              class="about-photo"
+              src="./assets/about-roswitha.jpg"
+              alt="Roswitha"
+              onerror="this.style.display='none';"
+            />
+            <div class="about-card">
+              <p>Hi! My name is Roswitha, and I’m a 10-year-old artist.</p>
+              <p>I love drawing, making crafts, and turning my ideas into colorful creations.</p>
+              <p>
+                I started my magnet business because I enjoy making art that people can cherish and
+                see every day on their fridge or office desk.
+              </p>
+              <p>Each magnet is made with creativity, care, and lots of fun.</p>
+              <p>My goal is to make little pieces of art that bring smiles to people’s faces.</p>
+              <p>Thank you for supporting my small business!</p>
+            </div>
           </div>
         </section>
 
         <section class="section section-product" id="packs">
           <div class="section-heading">
             <p class="section-tag">Magnet Catalog</p>
-            <h2>Choose your favorite square magnets</h2>
+            <h2>Customize your magnets</h2>
             <p>
               All magnets are custom 2.5&quot;x2.5&quot;. Add products to cart, then upload one photo per
               magnet at checkout.
@@ -177,8 +172,7 @@
               <div class="form-section">
                 <h3>Payment details</h3>
                 <p class="subtle-copy">
-                  This order uses online payment only. You will be redirected to secure checkout
-                  after order save.
+                  Online payment only. You will be redirected to secure checkout after order save.
                 </p>
               </div>
 
@@ -193,11 +187,7 @@
                 </label>
 
                 <div class="crop-tools">
-                  <label class="checkbox-field">
-                    <input type="checkbox" id="autoCropSquare" checked />
-                    <span>Auto-crop uploaded images to 2.5&quot;x2.5&quot; square</span>
-                  </label>
-                  <button id="cropNowButton" type="button" class="button button-secondary">Crop selected photos now</button>
+                  <button id="cropNowButton" type="button" class="button button-secondary">Crop selected photos manually</button>
                 </div>
 
                 <div class="upload-meta">
@@ -301,7 +291,36 @@
             <p id="contactStatus" class="form-status" role="status" aria-live="polite"></p>
           </form>
         </section>
+
+        <section class="section social-footer">
+          <p class="section-tag">Social</p>
+          <a
+            class="nav-link nav-insta"
+            href="https://www.instagram.com/magical_memories_byroswi/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <span class="insta-icon" aria-hidden="true">◎</span>
+            <span>Follow us on social media - @magical_memories_byroswi</span>
+          </a>
+        </section>
       </main>
+    </div>
+
+    <div id="cropModal" class="crop-modal" aria-hidden="true">
+      <div class="crop-dialog" role="dialog" aria-modal="true" aria-label="Crop photo to square">
+        <h3>Crop your photo for 2.5&quot;x2.5&quot; magnet</h3>
+        <canvas id="cropCanvas" width="420" height="420"></canvas>
+        <div class="crop-controls">
+          <label>Zoom <input id="cropZoom" type="range" min="100" max="300" value="100" /></label>
+          <label>Left / Right <input id="cropX" type="range" min="-100" max="100" value="0" /></label>
+          <label>Up / Down <input id="cropY" type="range" min="-100" max="100" value="0" /></label>
+        </div>
+        <div class="crop-actions">
+          <button id="cropApply" type="button" class="button button-primary">Apply crop</button>
+          <button id="cropCancel" type="button" class="button button-secondary">Cancel</button>
+        </div>
+      </div>
     </div>
   </body>
 </html>

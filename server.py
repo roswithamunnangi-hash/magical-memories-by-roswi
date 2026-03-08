@@ -68,7 +68,7 @@ SMTP_HOST = os.getenv("SMTP_HOST", "").strip()
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USERNAME = os.getenv("SMTP_USERNAME", "").strip()
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "").strip()
-SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", "").strip()
+SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", "").strip() or SMTP_USERNAME
 SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").strip().lower() not in {"0", "false", "no"}
 SMTP_USE_SSL = os.getenv("SMTP_USE_SSL", "false").strip().lower() in {"1", "true", "yes"}
 ORDER_NOTIFICATION_TO = [
@@ -568,7 +568,7 @@ def payment_readiness() -> dict[str, object]:
 
 
 def send_order_notification(order_record: dict[str, object]) -> dict[str, object]:
-    recipients = ORDER_NOTIFICATION_TO
+    recipients = ORDER_NOTIFICATION_TO or ([SMTP_USERNAME] if SMTP_USERNAME else [])
     if not recipients:
         return build_notification_state("skipped", "ORDER_NOTIFICATION_TO is not configured.")
 
@@ -591,7 +591,7 @@ def send_order_notification(order_record: dict[str, object]) -> dict[str, object
 
 
 def send_contact_notification(message_record: dict[str, object]) -> dict[str, object]:
-    recipients = CONTACT_NOTIFICATION_TO or ORDER_NOTIFICATION_TO
+    recipients = CONTACT_NOTIFICATION_TO or ORDER_NOTIFICATION_TO or ([SMTP_USERNAME] if SMTP_USERNAME else [])
     if not recipients:
         return build_notification_state("skipped", "CONTACT_NOTIFICATION_TO or ORDER_NOTIFICATION_TO is not configured.")
 
@@ -783,3 +783,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+

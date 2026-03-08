@@ -1,60 +1,34 @@
 ﻿const STORE_NAME = "Magical Memories by Roswi";
-const FALLBACK_PAYMENT_URL = "";
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILE_COUNT = 20;
 const previewUrls = [];
 
 const GALLERY_IMAGES = [
-  {
-    primary: "./assets/photos/magnet-photo-1.png",
-    fallback: "https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200",
-    alt: "Square baby magnet closeup",
-  },
-  {
-    primary: "./assets/photos/magnet-photo-2.png",
-    fallback: "https://images.unsplash.com/photo-1609220136736-443140cffec6?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200",
-    alt: "Magnet set on tabletop stand",
-  },
-  {
-    primary: "./assets/photos/magnet-photo-3.png",
-    fallback: "https://images.unsplash.com/photo-1471341971476-ae15ff5dd4ea?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200",
-    alt: "Magnets on refrigerator",
-  },
-  {
-    primary: "./assets/photos/magnet-photo-4.png",
-    fallback: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200",
-    alt: "Locker magnets",
-  },
-  {
-    primary: "./assets/photos/magnet-photo-5.png",
-    fallback: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200",
-    alt: "Beach couple magnet closeup",
-  },
+  { primary: "./assets/photos/magnet-photo-1.png", fallback: "https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200", alt: "Square baby magnet closeup" },
+  { primary: "./assets/photos/magnet-photo-2.png", fallback: "https://images.unsplash.com/photo-1609220136736-443140cffec6?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200", alt: "Magnet set on tabletop stand" },
+  { primary: "./assets/photos/magnet-photo-3.png", fallback: "https://images.unsplash.com/photo-1471341971476-ae15ff5dd4ea?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200", alt: "Magnets on refrigerator" },
+  { primary: "./assets/photos/magnet-photo-4.png", fallback: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200", alt: "Locker magnets" },
+  { primary: "./assets/photos/magnet-photo-5.png", fallback: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200", alt: "Beach couple magnet closeup" },
 ];
 
 const PRODUCTS = [
-  {
-    id: "single-square",
-    name: '2.5"x2.5" square magnet',
-    description: "Order single custom square magnets.",
-    price: 2.99,
-    magnetsPerUnit: 1,
-    galleryIndex: 0,
-  },
-  {
-    id: "set-nine",
-    name: '2.5"x2.5" square magnet (set of 9)',
-    description: "Best value bundle for family sets and gifts.",
-    price: 25.0,
-    magnetsPerUnit: 9,
-    galleryIndex: 1,
-  },
+  { id: "single-square", name: '2.5"x2.5" square magnet', description: "Order single custom square magnets.", price: 2.99, magnetsPerUnit: 1, galleryIndex: 0 },
+  { id: "set-nine", name: '2.5"x2.5" square magnet (set of 9)', description: "Best value bundle for family sets and gifts.", price: 25.0, magnetsPerUnit: 9, galleryIndex: 1 },
 ];
 
 const refs = {};
 const cart = new Map();
 let carouselIndex = 0;
 let carouselTimer = null;
+let selectedFiles = [];
+const cropState = {
+  activeIndex: -1,
+  image: null,
+  imageUrl: "",
+  zoom: 1,
+  offsetX: 0,
+  offsetY: 0,
+};
 
 document.addEventListener("DOMContentLoaded", () => {
   cacheRefs();
@@ -82,7 +56,6 @@ function cacheRefs() {
   refs.carouselNext = document.getElementById("carouselNext");
 
   refs.photos = document.getElementById("photos");
-  refs.autoCropSquare = document.getElementById("autoCropSquare");
   refs.cropNowButton = document.getElementById("cropNowButton");
   refs.photoPreview = document.getElementById("photoPreview");
   refs.photoCount = document.getElementById("photoCount");
@@ -101,6 +74,14 @@ function cacheRefs() {
   refs.submitButton = document.getElementById("submitButton");
   refs.contactStatus = document.getElementById("contactStatus");
   refs.contactSubmitButton = document.getElementById("contactSubmitButton");
+
+  refs.cropModal = document.getElementById("cropModal");
+  refs.cropCanvas = document.getElementById("cropCanvas");
+  refs.cropZoom = document.getElementById("cropZoom");
+  refs.cropX = document.getElementById("cropX");
+  refs.cropY = document.getElementById("cropY");
+  refs.cropApply = document.getElementById("cropApply");
+  refs.cropCancel = document.getElementById("cropCancel");
 }
 
 function bindEvents() {
@@ -108,6 +89,7 @@ function bindEvents() {
   refs.cartItems.addEventListener("click", handleCartClick);
   refs.photos.addEventListener("change", handlePhotosChange);
   refs.cropNowButton.addEventListener("click", handleCropNowClick);
+  refs.photoPreview.addEventListener("click", handlePreviewClick);
   refs.orderForm.addEventListener("submit", handleSubmitOrder);
   refs.contactForm.addEventListener("submit", handleSubmitContact);
 
@@ -116,21 +98,21 @@ function bindEvents() {
   refs.carouselDots.addEventListener("click", handleDotClick);
   refs.carouselTrack.addEventListener("mouseenter", stopCarouselAutoplay);
   refs.carouselTrack.addEventListener("mouseleave", startCarouselAutoplay);
+
+  refs.cropZoom.addEventListener("input", updateCropPreviewFromControls);
+  refs.cropX.addEventListener("input", updateCropPreviewFromControls);
+  refs.cropY.addEventListener("input", updateCropPreviewFromControls);
+  refs.cropApply.addEventListener("click", applyManualCrop);
+  refs.cropCancel.addEventListener("click", closeCropModal);
 }
 
 function renderCarousel() {
   refs.carouselTrack.innerHTML = GALLERY_IMAGES.map(
-    (image) => `
-      <figure class="carousel-slide">
-        <img src="${image.primary}" alt="${image.alt}" data-fallback="${image.fallback}" loading="lazy" />
-      </figure>
-    `
+    (image) => `<figure class="carousel-slide"><img src="${image.primary}" alt="${image.alt}" data-fallback="${image.fallback}" loading="lazy" /></figure>`
   ).join("");
 
   refs.carouselDots.innerHTML = GALLERY_IMAGES.map(
-    (_, index) => `
-      <button type="button" class="carousel-dot ${index === 0 ? "is-active" : ""}" data-dot-index="${index}" aria-label="Go to slide ${index + 1}"></button>
-    `
+    (_, index) => `<button type="button" class="carousel-dot ${index === 0 ? "is-active" : ""}" data-dot-index="${index}" aria-label="Go to slide ${index + 1}"></button>`
   ).join("");
 
   applyFallbackImages(refs.carouselTrack);
@@ -139,9 +121,7 @@ function renderCarousel() {
 
 function startCarouselAutoplay() {
   stopCarouselAutoplay();
-  carouselTimer = window.setInterval(() => {
-    moveCarousel(1);
-  }, 3500);
+  carouselTimer = window.setInterval(() => moveCarousel(1), 3500);
 }
 
 function stopCarouselAutoplay() {
@@ -158,17 +138,13 @@ function moveCarousel(direction) {
 
 function handleDotClick(event) {
   const button = event.target.closest("[data-dot-index]");
-  if (!button) {
-    return;
-  }
-
+  if (!button) return;
   carouselIndex = Number(button.dataset.dotIndex);
   updateCarouselPosition();
 }
 
 function updateCarouselPosition() {
   refs.carouselTrack.style.transform = `translateX(-${carouselIndex * 100}%)`;
-
   Array.from(refs.carouselDots.querySelectorAll(".carousel-dot")).forEach((dot, index) => {
     dot.classList.toggle("is-active", index === carouselIndex);
   });
@@ -209,18 +185,13 @@ function applyFallbackImages(parent) {
 
 function handleCatalogClick(event) {
   const addButton = event.target.closest("[data-add-id]");
-  if (!addButton) {
-    return;
-  }
+  if (!addButton) return;
 
-  const productId = addButton.dataset.addId;
-  const product = PRODUCTS.find((item) => item.id === productId);
-  if (!product) {
-    return;
-  }
+  const product = PRODUCTS.find((item) => item.id === addButton.dataset.addId);
+  if (!product) return;
 
-  const existing = cart.get(productId) || {
-    productId,
+  const existing = cart.get(product.id) || {
+    productId: product.id,
     name: product.name,
     price: product.price,
     quantity: 0,
@@ -228,27 +199,22 @@ function handleCatalogClick(event) {
   };
 
   existing.quantity += 1;
-  cart.set(productId, existing);
+  cart.set(product.id, existing);
   syncCartAndSummary();
 }
 
 function handleCartClick(event) {
   const removeButton = event.target.closest("[data-remove-id]");
-  if (!removeButton) {
-    return;
-  }
+  if (!removeButton) return;
 
-  const productId = removeButton.dataset.removeId;
-  if (!cart.has(productId)) {
-    return;
-  }
+  const item = cart.get(removeButton.dataset.removeId);
+  if (!item) return;
 
-  const item = cart.get(productId);
   if (item.quantity <= 1) {
-    cart.delete(productId);
+    cart.delete(removeButton.dataset.removeId);
   } else {
     item.quantity -= 1;
-    cart.set(productId, item);
+    cart.set(removeButton.dataset.removeId, item);
   }
 
   syncCartAndSummary();
@@ -274,8 +240,7 @@ function syncCartAndSummary() {
           <em>${formatCurrency(item.quantity * item.price)}</em>
           <button type="button" class="cart-remove" data-remove-id="${item.productId}">Remove</button>
         </div>
-      </li>
-    `
+      </li>`
     )
     .join("");
 
@@ -293,109 +258,151 @@ function syncCartAndSummary() {
   syncUploadGuidance();
 }
 
-async function handlePhotosChange() {
-  if (refs.autoCropSquare.checked) {
-    await applySquareCropToCurrentSelection();
-    return;
-  }
-
+function handlePhotosChange() {
+  selectedFiles = Array.from(refs.photos.files || []);
   renderPhotoPreview();
 }
 
-async function handleCropNowClick() {
-  await applySquareCropToCurrentSelection();
-}
-
-async function applySquareCropToCurrentSelection() {
-  const files = Array.from(refs.photos.files || []);
-  if (!files.length) {
-    renderPhotoPreview();
+function handleCropNowClick() {
+  if (!selectedFiles.length) {
+    setStatus("Select photos first, then crop.", "error");
     return;
   }
 
-  const croppedFiles = [];
-  for (const file of files) {
-    if (!file.type.startsWith("image/")) {
-      croppedFiles.push(file);
-      continue;
-    }
-
-    try {
-      const cropped = await cropImageFileToSquare(file);
-      croppedFiles.push(cropped);
-    } catch {
-      croppedFiles.push(file);
-    }
-  }
-
-  setInputFiles(refs.photos, croppedFiles);
-  renderPhotoPreview();
+  openCropModal(0);
 }
 
-function cropImageFileToSquare(file) {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const image = new Image();
+function handlePreviewClick(event) {
+  const cropButton = event.target.closest("[data-crop-index]");
+  if (!cropButton) return;
+  openCropModal(Number(cropButton.dataset.cropIndex));
+}
 
-    image.onload = () => {
-      const side = Math.min(image.naturalWidth, image.naturalHeight);
-      const sx = Math.floor((image.naturalWidth - side) / 2);
-      const sy = Math.floor((image.naturalHeight - side) / 2);
+function openCropModal(index) {
+  if (!selectedFiles[index]) return;
 
-      const canvas = document.createElement("canvas");
-      canvas.width = side;
-      canvas.height = side;
+  const file = selectedFiles[index];
+  if (!file.type.startsWith("image/")) {
+    setStatus("Only image files can be cropped.", "error");
+    return;
+  }
 
-      const context = canvas.getContext("2d");
-      if (!context) {
-        URL.revokeObjectURL(url);
-        reject(new Error("Could not start image crop."));
+  if (cropState.imageUrl) {
+    URL.revokeObjectURL(cropState.imageUrl);
+  }
+
+  cropState.activeIndex = index;
+  cropState.zoom = 1;
+  cropState.offsetX = 0;
+  cropState.offsetY = 0;
+  refs.cropZoom.value = "100";
+  refs.cropX.value = "0";
+  refs.cropY.value = "0";
+
+  const imageUrl = URL.createObjectURL(file);
+  cropState.imageUrl = imageUrl;
+
+  const image = new Image();
+  image.onload = () => {
+    cropState.image = image;
+    refs.cropModal.classList.add("is-open");
+    refs.cropModal.setAttribute("aria-hidden", "false");
+    drawCropPreview();
+  };
+  image.onerror = () => {
+    setStatus("Unable to open this image for cropping.", "error");
+  };
+  image.src = imageUrl;
+}
+
+function updateCropPreviewFromControls() {
+  cropState.zoom = Number(refs.cropZoom.value) / 100;
+  cropState.offsetX = Number(refs.cropX.value);
+  cropState.offsetY = Number(refs.cropY.value);
+  drawCropPreview();
+}
+
+function drawCropPreview() {
+  const image = cropState.image;
+  const canvas = refs.cropCanvas;
+  if (!image || !canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const minSide = Math.min(image.naturalWidth, image.naturalHeight);
+  const cropSize = minSide / cropState.zoom;
+  const maxPanX = Math.max((image.naturalWidth - cropSize) / 2, 0);
+  const maxPanY = Math.max((image.naturalHeight - cropSize) / 2, 0);
+
+  const centerX = image.naturalWidth / 2 + (cropState.offsetX / 100) * maxPanX;
+  const centerY = image.naturalHeight / 2 + (cropState.offsetY / 100) * maxPanY;
+
+  let sx = centerX - cropSize / 2;
+  let sy = centerY - cropSize / 2;
+
+  sx = Math.max(0, Math.min(sx, image.naturalWidth - cropSize));
+  sy = Math.max(0, Math.min(sy, image.naturalHeight - cropSize));
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(image, sx, sy, cropSize, cropSize, 0, 0, canvas.width, canvas.height);
+}
+
+function applyManualCrop() {
+  const index = cropState.activeIndex;
+  if (index < 0 || !selectedFiles[index] || !cropState.image) {
+    closeCropModal();
+    return;
+  }
+
+  const sourceFile = selectedFiles[index];
+  const canvas = refs.cropCanvas;
+  const outputType = sourceFile.type && sourceFile.type.startsWith("image/") ? sourceFile.type : "image/jpeg";
+
+  canvas.toBlob(
+    (blob) => {
+      if (!blob) {
+        setStatus("Could not apply crop.", "error");
         return;
       }
 
-      context.drawImage(image, sx, sy, side, side, 0, 0, side, side);
+      const baseName = sourceFile.name.replace(/\.[^.]+$/, "");
+      const extension = (sourceFile.name.split(".").pop() || "jpg").toLowerCase();
+      const croppedFile = new File([blob], `${baseName}-square.${extension}`, {
+        type: outputType,
+        lastModified: Date.now(),
+      });
 
-      const outputType = file.type && file.type.startsWith("image/") ? file.type : "image/jpeg";
-      canvas.toBlob(
-        (blob) => {
-          URL.revokeObjectURL(url);
-          if (!blob) {
-            reject(new Error("Could not finish image crop."));
-            return;
-          }
-
-          const extension = (file.name.split(".").pop() || "jpg").toLowerCase();
-          const baseName = file.name.replace(/\.[^.]+$/, "");
-          const croppedFile = new File([blob], `${baseName}-square.${extension}`, {
-            type: outputType,
-            lastModified: Date.now(),
-          });
-          resolve(croppedFile);
-        },
-        outputType,
-        0.95
-      );
-    };
-
-    image.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("Image could not be loaded."));
-    };
-
-    image.src = url;
-  });
+      selectedFiles[index] = croppedFile;
+      syncInputWithSelectedFiles();
+      renderPhotoPreview();
+      closeCropModal();
+    },
+    outputType,
+    0.95
+  );
 }
 
-function setInputFiles(input, files) {
+function closeCropModal() {
+  refs.cropModal.classList.remove("is-open");
+  refs.cropModal.setAttribute("aria-hidden", "true");
+  cropState.activeIndex = -1;
+  cropState.image = null;
+  if (cropState.imageUrl) {
+    URL.revokeObjectURL(cropState.imageUrl);
+    cropState.imageUrl = "";
+  }
+}
+
+function syncInputWithSelectedFiles() {
   const transfer = new DataTransfer();
-  files.forEach((file) => transfer.items.add(file));
-  input.files = transfer.files;
+  selectedFiles.forEach((file) => transfer.items.add(file));
+  refs.photos.files = transfer.files;
 }
 
 function renderPhotoPreview() {
   clearPreviewUrls();
-
-  const files = Array.from(refs.photos.files || []);
+  const files = selectedFiles;
   refs.photoPreview.innerHTML = "";
   syncUploadGuidance(files);
 
@@ -406,7 +413,7 @@ function renderPhotoPreview() {
 
   refs.photoCount.textContent = `${files.length} photo${files.length === 1 ? "" : "s"} selected`;
 
-  files.forEach((file) => {
+  files.forEach((file, index) => {
     const previewUrl = URL.createObjectURL(file);
     previewUrls.push(previewUrl);
 
@@ -414,13 +421,19 @@ function renderPhotoPreview() {
     const image = document.createElement("img");
     const title = document.createElement("strong");
     const meta = document.createElement("span");
+    const cropButton = document.createElement("button");
 
     image.src = previewUrl;
     image.alt = file.name;
     title.textContent = truncate(file.name, 22);
     meta.textContent = `${formatMegabytes(file.size)} MB`;
 
-    card.append(image, title, meta);
+    cropButton.type = "button";
+    cropButton.className = "button button-secondary preview-crop-button";
+    cropButton.dataset.cropIndex = String(index);
+    cropButton.textContent = "Crop this photo";
+
+    card.append(image, title, meta, cropButton);
     refs.photoPreview.appendChild(card);
   });
 }
@@ -439,6 +452,8 @@ async function handleSubmitOrder(event) {
   refs.submitButton.textContent = "Saving order...";
 
   try {
+    syncInputWithSelectedFiles();
+
     const response = await fetch("/api/orders", {
       method: "POST",
       body: new FormData(refs.orderForm),
@@ -459,16 +474,16 @@ async function handleSubmitOrder(event) {
 
     setStatus(`Order ${payload.orderId} received with ${payload.savedPhotos} uploaded photos.${emailNote}`, "success");
 
-    const paymentUrl = payload.paymentUrl || FALLBACK_PAYMENT_URL;
-    if (paymentUrl) {
+    if (payload.paymentUrl) {
       window.setTimeout(() => {
-        window.location.href = paymentUrl;
+        window.location.href = payload.paymentUrl;
       }, 1200);
       return;
     }
 
     refs.orderForm.reset();
     cart.clear();
+    selectedFiles = [];
     refs.photoPreview.innerHTML = "";
     refs.photoCount.textContent = "No photos selected yet";
     clearPreviewUrls();
@@ -504,9 +519,7 @@ async function handleSubmitContact(event) {
 
     const response = await fetch("/api/contact", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
@@ -515,8 +528,16 @@ async function handleSubmitContact(event) {
       throw new Error(data.error || "Message could not be sent right now.");
     }
 
+    const note = data.notificationStatus === "sent"
+      ? ""
+      : data.notificationStatus === "queued"
+      ? " Email is queued due to temporary network issue."
+      : data.notificationDetails
+      ? ` ${data.notificationDetails}`
+      : "";
+
     refs.contactForm.reset();
-    refs.contactStatus.textContent = data.message || "Message sent successfully.";
+    refs.contactStatus.textContent = `${data.message || "Message sent."}${note}`;
     refs.contactStatus.classList.add("is-success");
   } catch (error) {
     refs.contactStatus.textContent = error.message || "Message could not be sent right now.";
@@ -529,7 +550,7 @@ async function handleSubmitContact(event) {
 
 function validateOrderForm() {
   const requiredPhotoCount = totalMagnets();
-  const files = Array.from(refs.photos.files || []);
+  const files = selectedFiles;
 
   if (!refs.orderForm.reportValidity()) {
     return "Please complete the required fields before submitting.";
@@ -560,7 +581,7 @@ function validateOrderForm() {
   return "";
 }
 
-function syncUploadGuidance(files = Array.from(refs.photos.files || [])) {
+function syncUploadGuidance(files = selectedFiles) {
   const quantity = Math.max(totalMagnets(), 1);
   const missingPhotos = Math.max(quantity - files.length, 0);
 

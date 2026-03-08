@@ -800,3 +800,136 @@ textarea {
     align-items: flex-start;
   }
 }
+
+/* Requested UX changes */
+.hero-copy h1 {
+  max-width: 16ch;
+}
+
+.topbar-links {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.topbar-links .nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 12px;
+  border: 1px solid rgba(24, 49, 43, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.insta-icon {
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.about-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.about-photo {
+  width: 100%;
+  border-radius: 18px;
+  object-fit: cover;
+  border: 1px solid rgba(24, 49, 43, 0.1);
+  box-shadow: var(--shadow-md);
+}
+
+.catalog-card img {
+  height: 270px;
+  object-fit: contain;
+  background: linear-gradient(180deg, #f9f5ef 0%, #efe4d3 100%);
+  padding: 12px;
+}
+
+.crop-tools {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.preview-crop-button {
+  width: 100%;
+}
+
+.social-footer {
+  text-align: center;
+}
+
+.social-footer .nav-link {
+  margin: 0 auto;
+  width: fit-content;
+}
+
+.crop-modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 20, 18, 0.56);
+  z-index: 40;
+  padding: 16px;
+}
+
+.crop-modal.is-open {
+  display: flex;
+}
+
+.crop-dialog {
+  width: min(560px, 100%);
+  background: #fff;
+  border-radius: 20px;
+  padding: 18px;
+  border: 1px solid rgba(24, 49, 43, 0.16);
+  box-shadow: var(--shadow-lg);
+  display: grid;
+  gap: 12px;
+}
+
+#cropCanvas {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(24, 49, 43, 0.16);
+  background: #f5f2ee;
+}
+
+.crop-controls {
+  display: grid;
+  gap: 10px;
+}
+
+.crop-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.crop-actions {
+  display: flex;
+  gap: 10px;
+}
+
+@media (max-width: 1040px) {
+  .about-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .topbar-links {
+    justify-content: flex-start;
+  }
+
+  .crop-actions {
+    flex-direction: column;
+  }
+}
