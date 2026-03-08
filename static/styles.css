@@ -730,3 +730,73 @@ textarea {
   display: grid;
   gap: 14px;
 }
+
+/* Latest UX overrides */
+.brand-logo {
+  width: 78px;
+  height: 62px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.topbar-links {
+  gap: 10px;
+}
+
+.topbar-links .nav-link {
+  padding: 9px 12px;
+  border: 1px solid rgba(24, 49, 43, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.nav-cart {
+  font-weight: 800;
+}
+
+.hero-text {
+  font-size: 1.3rem;
+  color: #35555f;
+  font-weight: 600;
+}
+
+.about-card {
+  display: grid;
+  gap: 12px;
+}
+
+.about-catch {
+  font-weight: 800;
+  color: #365a49;
+  font-size: 1.05rem;
+}
+
+.catalog-card img {
+  height: 260px;
+  object-fit: contain;
+  background: linear-gradient(180deg, #f9f5ef 0%, #efe4d3 100%);
+  padding: 12px;
+}
+
+.crop-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+@media (max-width: 720px) {
+  .brand-logo {
+    width: 68px;
+    height: 54px;
+  }
+
+  .topbar-links .nav-link {
+    width: auto;
+  }
+
+  .crop-tools {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

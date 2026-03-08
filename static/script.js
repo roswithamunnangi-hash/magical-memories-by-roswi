@@ -1,6 +1,5 @@
 ﻿const STORE_NAME = "Magical Memories by Roswi";
-const SUPPORT_EMAIL = "roswithamunnangi@gmail.com";
-const ONLINE_PAYMENT_URL = "https://buy.stripe.com/test_placeholder";
+const FALLBACK_PAYMENT_URL = "";
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILE_COUNT = 20;
 const previewUrls = [];
@@ -83,6 +82,8 @@ function cacheRefs() {
   refs.carouselNext = document.getElementById("carouselNext");
 
   refs.photos = document.getElementById("photos");
+  refs.autoCropSquare = document.getElementById("autoCropSquare");
+  refs.cropNowButton = document.getElementById("cropNowButton");
   refs.photoPreview = document.getElementById("photoPreview");
   refs.photoCount = document.getElementById("photoCount");
   refs.photoHint = document.getElementById("photoHint");
@@ -106,6 +107,7 @@ function bindEvents() {
   refs.catalogGrid.addEventListener("click", handleCatalogClick);
   refs.cartItems.addEventListener("click", handleCartClick);
   refs.photos.addEventListener("change", handlePhotosChange);
+  refs.cropNowButton.addEventListener("click", handleCropNowClick);
   refs.orderForm.addEventListener("submit", handleSubmitOrder);
   refs.contactForm.addEventListener("submit", handleSubmitContact);
 
@@ -291,7 +293,106 @@ function syncCartAndSummary() {
   syncUploadGuidance();
 }
 
-function handlePhotosChange() {
+async function handlePhotosChange() {
+  if (refs.autoCropSquare.checked) {
+    await applySquareCropToCurrentSelection();
+    return;
+  }
+
+  renderPhotoPreview();
+}
+
+async function handleCropNowClick() {
+  await applySquareCropToCurrentSelection();
+}
+
+async function applySquareCropToCurrentSelection() {
+  const files = Array.from(refs.photos.files || []);
+  if (!files.length) {
+    renderPhotoPreview();
+    return;
+  }
+
+  const croppedFiles = [];
+  for (const file of files) {
+    if (!file.type.startsWith("image/")) {
+      croppedFiles.push(file);
+      continue;
+    }
+
+    try {
+      const cropped = await cropImageFileToSquare(file);
+      croppedFiles.push(cropped);
+    } catch {
+      croppedFiles.push(file);
+    }
+  }
+
+  setInputFiles(refs.photos, croppedFiles);
+  renderPhotoPreview();
+}
+
+function cropImageFileToSquare(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+
+    image.onload = () => {
+      const side = Math.min(image.naturalWidth, image.naturalHeight);
+      const sx = Math.floor((image.naturalWidth - side) / 2);
+      const sy = Math.floor((image.naturalHeight - side) / 2);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = side;
+      canvas.height = side;
+
+      const context = canvas.getContext("2d");
+      if (!context) {
+        URL.revokeObjectURL(url);
+        reject(new Error("Could not start image crop."));
+        return;
+      }
+
+      context.drawImage(image, sx, sy, side, side, 0, 0, side, side);
+
+      const outputType = file.type && file.type.startsWith("image/") ? file.type : "image/jpeg";
+      canvas.toBlob(
+        (blob) => {
+          URL.revokeObjectURL(url);
+          if (!blob) {
+            reject(new Error("Could not finish image crop."));
+            return;
+          }
+
+          const extension = (file.name.split(".").pop() || "jpg").toLowerCase();
+          const baseName = file.name.replace(/\.[^.]+$/, "");
+          const croppedFile = new File([blob], `${baseName}-square.${extension}`, {
+            type: outputType,
+            lastModified: Date.now(),
+          });
+          resolve(croppedFile);
+        },
+        outputType,
+        0.95
+      );
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Image could not be loaded."));
+    };
+
+    image.src = url;
+  });
+}
+
+function setInputFiles(input, files) {
+  const transfer = new DataTransfer();
+  files.forEach((file) => transfer.items.add(file));
+  input.files = transfer.files;
+}
+
+function renderPhotoPreview() {
   clearPreviewUrls();
 
   const files = Array.from(refs.photos.files || []);
@@ -338,12 +439,9 @@ async function handleSubmitOrder(event) {
   refs.submitButton.textContent = "Saving order...";
 
   try {
-    const formData = new FormData(refs.orderForm);
-    const paymentMethod = String(formData.get("payment_method") || "pay_later");
-
     const response = await fetch("/api/orders", {
       method: "POST",
-      body: formData,
+      body: new FormData(refs.orderForm),
     });
 
     const payload = await response.json().catch(() => ({}));
@@ -351,17 +449,20 @@ async function handleSubmitOrder(event) {
       throw new Error(payload.error || "The order could not be submitted.");
     }
 
-    const emailNote = payload.notificationStatus === "failed"
-      ? " Seller email is temporarily delayed, but your order was saved successfully."
+    const emailNote = payload.notificationStatus === "sent"
+      ? " Seller email sent."
       : payload.notificationStatus === "queued"
-      ? " Seller email is queued and will retry automatically."
+      ? " Seller email queued (temporary network issue)."
+      : payload.notificationDetails
+      ? ` Email note: ${payload.notificationDetails}`
       : "";
 
     setStatus(`Order ${payload.orderId} received with ${payload.savedPhotos} uploaded photos.${emailNote}`, "success");
 
-    if (paymentMethod === "online") {
+    const paymentUrl = payload.paymentUrl || FALLBACK_PAYMENT_URL;
+    if (paymentUrl) {
       window.setTimeout(() => {
-        window.location.href = ONLINE_PAYMENT_URL;
+        window.location.href = paymentUrl;
       }, 1200);
       return;
     }
@@ -380,7 +481,7 @@ async function handleSubmitOrder(event) {
   }
 }
 
-function handleSubmitContact(event) {
+async function handleSubmitContact(event) {
   event.preventDefault();
   refs.contactStatus.textContent = "";
   refs.contactStatus.className = "form-status";
@@ -391,16 +492,39 @@ function handleSubmitContact(event) {
     return;
   }
 
-  const name = refs.contactForm.elements.name.value;
-  const email = refs.contactForm.elements.email.value;
-  const message = refs.contactForm.elements.message.value;
+  refs.contactSubmitButton.disabled = true;
+  refs.contactSubmitButton.textContent = "Sending...";
 
-  const subject = encodeURIComponent(`${STORE_NAME} customer question from ${name}`);
-  const body = encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\nQuestion:\n${message}`);
+  try {
+    const payload = {
+      name: refs.contactForm.elements.name.value,
+      email: refs.contactForm.elements.email.value,
+      message: refs.contactForm.elements.message.value,
+    };
 
-  window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
-  refs.contactStatus.textContent = "Your email app is opening to send the message.";
-  refs.contactStatus.classList.add("is-success");
+    const response = await fetch("/api/contact", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error || "Message could not be sent right now.");
+    }
+
+    refs.contactForm.reset();
+    refs.contactStatus.textContent = data.message || "Message sent successfully.";
+    refs.contactStatus.classList.add("is-success");
+  } catch (error) {
+    refs.contactStatus.textContent = error.message || "Message could not be sent right now.";
+    refs.contactStatus.classList.add("is-error");
+  } finally {
+    refs.contactSubmitButton.disabled = false;
+    refs.contactSubmitButton.textContent = "Send message";
+  }
 }
 
 function validateOrderForm() {
@@ -433,16 +557,7 @@ function validateOrderForm() {
     }
   }
 
-  if (ONLINE_PAYMENT_URL.includes("test_placeholder") && selectedPaymentMethod() === "online") {
-    return "Set your real payment link in static/script.js (ONLINE_PAYMENT_URL) before accepting online payments.";
-  }
-
   return "";
-}
-
-function selectedPaymentMethod() {
-  const selected = refs.orderForm.querySelector('input[name="payment_method"]:checked');
-  return selected ? selected.value : "pay_later";
 }
 
 function syncUploadGuidance(files = Array.from(refs.photos.files || [])) {

@@ -6,7 +6,7 @@
     <title>Magical Memories by Roswi</title>
     <meta
       name="description"
-      content="Custom 2.5 x 2.5 square photo magnets with cart, payments, and photo uploads."
+      content="Custom 2.5 x 2.5 square photo magnets with cart, online payments, and photo uploads."
     />
     <link rel="stylesheet" href="./styles.css" />
     <script defer src="./script.js"></script>
@@ -16,10 +16,17 @@
       <header class="hero">
         <nav class="topbar">
           <a class="brand" href="#top">
-            <img class="brand-logo" src="./assets/logo.svg" alt="Magical Memories by Roswi logo" />
+            <img
+              class="brand-logo"
+              src="./assets/logo-attached.png"
+              alt="Magical Memories by Roswi logo"
+              onerror="this.onerror=null;this.src='./assets/logo.svg';"
+            />
             <span class="brand-name">Magical Memories by Roswi</span>
           </a>
           <div class="topbar-links">
+            <a class="nav-link" href="#about">About Me</a>
+            <a class="nav-link nav-cart" href="#cart-page" aria-label="Go to cart">🛒 Cart</a>
             <a
               class="nav-link"
               href="https://www.instagram.com/magical_memories_byroswi/"
@@ -28,35 +35,19 @@
             >
               @magical_memories_byroswi
             </a>
-            <a class="nav-link" href="#contact">Contact Us</a>
-            <a class="nav-link" href="#order">Order Now</a>
           </div>
         </nav>
 
         <div class="hero-grid">
           <div class="hero-copy">
             <p class="eyebrow">Custom 2.5&quot;x2.5&quot; square magnets</p>
-            <h1>Build your order and pay online.</h1>
-            <p class="hero-text">
-              Add your favorite styles to cart, upload your photos, and place one complete order.
-              Choose online payment or pay-later checkout.
-            </p>
+            <h1>Handcrafted custom Magnets</h1>
+            <p class="hero-text">Some memories deserve more than your camerca roll</p>
 
             <div class="hero-actions">
               <a class="button button-primary" href="#packs">Shop now</a>
               <a class="button button-secondary" href="#order">Checkout</a>
             </div>
-
-            <a
-              class="instagram-card"
-              href="https://www.instagram.com/magical_memories_byroswi/"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <span class="instagram-label">Instagram</span>
-              <strong>@magical_memories_byroswi</strong>
-              <em>See recent work and message us directly</em>
-            </a>
 
             <div class="trust-row">
               <div>
@@ -68,7 +59,7 @@
                 <span>2.5&quot;x2.5&quot; square magnet (set of 9) at $25</span>
               </div>
               <div>
-                <strong>Online Payments</strong>
+                <strong>Secure checkout</strong>
                 <span>Take orders and payments from your website</span>
               </div>
             </div>
@@ -89,17 +80,16 @@
         <section class="section" id="about">
           <div class="section-heading">
             <p class="section-tag">About Me</p>
-            <h2>Meet Roswitha</h2>
           </div>
           <div class="about-card">
-            <p>
-              Hi! My name is Roswitha, and I’m a 10-year-old artist. I love drawing, making crafts,
-              and turning my ideas into colorful creations. I started my magnet business because I
-              enjoy making art that people can cherish and see every day on their fridge or office
-              desk. Each magnet is made with creativity, care, and lots of fun. My goal is to make
-              little pieces of art that bring smiles to people’s faces. Thank you for supporting my
-              small business!
-            </p>
+            <p>Hi! My name is Roswitha, and I’m a 10-year-old artist.</p>
+            <p>I love drawing, making crafts, and turning my ideas into colorful creations.</p>
+            <p>I started my magnet business because I enjoy making art that people can cherish and see every day on their fridge or office desk.</p>
+            <p>Each magnet is made with creativity, care, and lots of fun.</p>
+            <p class="about-catch">Tiny magnets. Big smiles.</p>
+            <p class="about-catch">Little memories, made magical.</p>
+            <p>My goal is to make little pieces of art that bring smiles to people’s faces.</p>
+            <p>Thank you for supporting my small business!</p>
           </div>
         </section>
 
@@ -115,7 +105,7 @@
 
           <div id="catalogGrid" class="catalog-grid" aria-live="polite"></div>
 
-          <div class="cart-box">
+          <div class="cart-box" id="cart-page">
             <div>
               <p class="section-tag">Cart</p>
               <h3>Items in your cart</h3>
@@ -134,7 +124,7 @@
             <p class="section-tag">Checkout</p>
             <h2>Place your order</h2>
             <p>
-              Complete your details, choose payment, upload photos, and submit your order.
+              Complete your details, pay online, upload photos, and submit your order.
             </p>
           </div>
 
@@ -142,6 +132,7 @@
             <form id="orderForm" class="order-form" enctype="multipart/form-data" novalidate>
               <input type="hidden" name="product_quantity" id="productQuantity" value="1" />
               <input type="hidden" name="cart_items_json" id="cartItemsJson" value="" />
+              <input type="hidden" name="payment_method" value="online" />
 
               <div class="form-section">
                 <h3>Customer details</h3>
@@ -185,19 +176,9 @@
 
               <div class="form-section">
                 <h3>Payment details</h3>
-                <div class="payment-options">
-                  <label class="radio-field">
-                    <input type="radio" name="payment_method" value="online" required checked />
-                    <span>Pay now online (Card / Stripe Checkout)</span>
-                  </label>
-                  <label class="radio-field">
-                    <input type="radio" name="payment_method" value="pay_later" required />
-                    <span>Pay later (manual confirmation)</span>
-                  </label>
-                </div>
                 <p class="subtle-copy">
-                  If you choose online payment, you will be redirected to secure checkout after the
-                  order is saved.
+                  This order uses online payment only. You will be redirected to secure checkout
+                  after order save.
                 </p>
               </div>
 
@@ -210,6 +191,14 @@
                   </span>
                   <input id="photos" name="photos" type="file" accept="image/*" multiple required />
                 </label>
+
+                <div class="crop-tools">
+                  <label class="checkbox-field">
+                    <input type="checkbox" id="autoCropSquare" checked />
+                    <span>Auto-crop uploaded images to 2.5&quot;x2.5&quot; square</span>
+                  </label>
+                  <button id="cropNowButton" type="button" class="button button-secondary">Crop selected photos now</button>
+                </div>
 
                 <div class="upload-meta">
                   <span id="photoCount">No photos selected yet</span>
@@ -290,7 +279,7 @@
           <div class="section-heading">
             <p class="section-tag">Contact Us</p>
             <h2>Questions? Send us a message</h2>
-            <p>Use this form to ask anything about your magnet order.</p>
+            <p>Use this form and we will reply by email.</p>
           </div>
 
           <form id="contactForm" class="contact-form" novalidate>

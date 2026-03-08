@@ -1,46 +1,72 @@
 ﻿# Magical Memories by Roswi Shop
 
-## New Features Added
+## Updated Features
 
-- Top image carousel using `static/assets/photos/magnet-photo-1.png` ... `magnet-photo-5.png`
-- Product catalog with cart
-- Payment Details section in checkout
-- Online payment redirect support (set your payment link)
-- About Me section (Roswitha bio)
-- Contact Us section (customer email questions)
-- Better email failure handling for network outages (`queued` status)
+- Custom hero text:
+  - Heading: **Handcrafted custom Magnets**
+  - Subheader: **Some memories deserve more than your camerca roll**
+- Top-right navigation with:
+  - About Me page link
+  - Cart icon/page link
+  - Instagram link
+- Magnet catalog + cart with pricing:
+  - 2.5"x2.5" square magnet: **$2.99 each**
+  - 2.5"x2.5" square magnet (set of 9): **$25**
+- Catalog image zoom-out styling for better visibility
+- Photo upload crop tools:
+  - Auto-crop to square option
+  - Manual "Crop selected photos now" button
+- Checkout is now **online payment only**
+- Contact form posts to backend API and sends email notifications
+- Order emails + contact emails use the same SMTP server settings
+- Network SMTP outages are handled as `queued` so orders/messages are still saved
 
-## Pricing Configured
+## Logo File
 
-- 2.5"x2.5" square magnet - $2.99 each
-- 2.5"x2.5" square magnet (set of 9) - $25
+Website now looks for this logo file first:
 
-## Important Setup Before Going Live
+`static/assets/logo-attached.png`
 
-### 1) Set your payment link
+If missing, it falls back to `static/assets/logo.svg`.
 
-Open `static/script.js` and update:
+Place your attached logo image at:
 
-```js
-const ONLINE_PAYMENT_URL = "https://buy.stripe.com/test_placeholder";
-```
+`static/assets/logo-attached.png`
 
-Replace with your real Stripe/Square payment link.
+## Required Configuration (Render Environment Variables)
 
-### 2) Seller email settings (.env)
+Set these variables in Render for emails and payments:
 
-Set these values in your Render environment:
+- `HOST=0.0.0.0`
+- `PORT=10000`
+- `DATA_DIR=./data`
+- `STORE_NAME=Magical Memories by Roswi`
+- `PRODUCT_NAME=2.5"x2.5" square magnet`
+- `UNIT_PRICE_USD=2.99`
+- `PUBLIC_BASE_URL=https://YOUR-SERVICE.onrender.com`
+- `PAYMENT_CHECKOUT_URL=https://YOUR-PAYMENT-LINK`
 
-- `ORDER_NOTIFICATION_TO`
-- `SMTP_HOST`
-- `SMTP_PORT`
-- `SMTP_USERNAME`
-- `SMTP_PASSWORD`
-- `SMTP_FROM_EMAIL`
+Email settings (required for order + contact emails):
+
+- `ORDER_NOTIFICATION_TO=youremail@gmail.com`
+- `CONTACT_NOTIFICATION_TO=youremail@gmail.com` (optional; falls back to ORDER_NOTIFICATION_TO)
+- `SMTP_HOST=smtp.gmail.com`
+- `SMTP_PORT=587`
+- `SMTP_USERNAME=youremail@gmail.com`
+- `SMTP_PASSWORD=YOUR_APP_PASSWORD`
+- `SMTP_FROM_EMAIL=youremail@gmail.com`
 - `SMTP_USE_TLS=true`
 - `SMTP_USE_SSL=false`
 
-If SMTP network is temporarily unreachable, orders are still saved and email status is marked `queued`.
+## Gmail Note
+
+If using Gmail, use a Google **App Password** (not your normal account password).
+
+## APIs
+
+- `POST /api/orders`
+- `POST /api/contact`
+- `GET /api/health`
 
 ## Files Updated
 
@@ -48,10 +74,24 @@ If SMTP network is temporarily unreachable, orders are still saved and email sta
 - `static/styles.css`
 - `static/script.js`
 - `server.py`
+- `README.md`
 
-## Redeploy Steps (Render)
+## Redeploy Steps
 
-1. Commit and push code to GitHub.
-2. In Render, open your service.
-3. Click **Manual Deploy** -> **Deploy latest commit**.
-4. Wait for deploy, then test one order end-to-end.
+1. Commit and push:
+
+```powershell
+git add .
+git commit -m "Update logo/nav/crop/contact/email/payment flow"
+git push
+```
+
+2. In Render:
+- Open your service
+- Add/update environment variables above
+- Click **Manual Deploy** -> **Deploy latest commit**
+
+3. Test:
+- Place one order
+- Submit one contact message
+- Verify emails received in your inbox

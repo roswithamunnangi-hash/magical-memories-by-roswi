@@ -48,17 +48,21 @@ def load_decimal_env(name: str, default: str) -> Decimal:
     except InvalidOperation:
         return Decimal(default).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
+
 STATIC_DIR = BASE_DIR / "static"
 DATA_DIR = Path(os.getenv("DATA_DIR", str(BASE_DIR / "data"))).expanduser().resolve()
 ORDERS_DIR = DATA_DIR / "orders"
 UPLOADS_DIR = DATA_DIR / "uploads"
+MESSAGES_DIR = DATA_DIR / "messages"
+EMAIL_QUEUE_DIR = DATA_DIR / "email_queue"
 
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8000"))
 STORE_NAME = os.getenv("STORE_NAME", "Magical Memories by Roswi").strip() or "Magical Memories by Roswi"
-PRODUCT_NAME = os.getenv("PRODUCT_NAME", "Custom Memory Tile").strip() or "Custom Memory Tile"
-UNIT_PRICE_USD = load_decimal_env("UNIT_PRICE_USD", "8.99")
+PRODUCT_NAME = os.getenv("PRODUCT_NAME", '2.5"x2.5" square magnet').strip() or '2.5"x2.5" square magnet'
+UNIT_PRICE_USD = load_decimal_env("UNIT_PRICE_USD", "2.99")
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "").strip().rstrip("/")
+PAYMENT_CHECKOUT_URL = os.getenv("PAYMENT_CHECKOUT_URL", "").strip()
 
 SMTP_HOST = os.getenv("SMTP_HOST", "").strip()
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
@@ -73,10 +77,13 @@ ORDER_NOTIFICATION_TO = [
 ORDER_NOTIFICATION_CC = [
     item.strip() for item in os.getenv("ORDER_NOTIFICATION_CC", "").split(",") if item.strip()
 ]
+CONTACT_NOTIFICATION_TO = [
+    item.strip() for item in os.getenv("CONTACT_NOTIFICATION_TO", "").split(",") if item.strip()
+]
 
 MAX_REQUEST_SIZE = 80 * 1024 * 1024
 MAX_FILE_SIZE = 10 * 1024 * 1024
-MAX_FILE_COUNT = 20
+MAX_FILE_COUNT = 40
 
 ALLOWED_IMAGE_EXTENSIONS = {
     ".jpg",
@@ -97,7 +104,7 @@ ALLOWED_IMAGE_TYPES = {
     "image/heif",
 }
 
-REQUIRED_FIELDS = (
+REQUIRED_ORDER_FIELDS = (
     "customer_name",
     "email",
     "street_address",
@@ -105,6 +112,7 @@ REQUIRED_FIELDS = (
     "state",
     "zip_code",
     "product_quantity",
+    "payment_method",
 )
 
 
@@ -129,6 +137,7 @@ class MemoryTilesHandler(SimpleHTTPRequestHandler):
                     "store": STORE_NAME,
                     "publicBaseUrl": PUBLIC_BASE_URL or "",
                     "notification": notification_readiness(),
+                    "payment": payment_readiness(),
                 },
             )
             return
@@ -143,38 +152,27 @@ class MemoryTilesHandler(SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self) -> None:
-        if urlparse(self.path).path != "/api/orders":
-            self.send_error(HTTPStatus.NOT_FOUND, "Not found")
+        path = urlparse(self.path).path
+
+        if path == "/api/orders":
+            self.handle_order_create()
             return
 
+        if path == "/api/contact":
+            self.handle_contact_create()
+            return
+
+        self.send_error(HTTPStatus.NOT_FOUND, "Not found")
+
+    def handle_order_create(self) -> None:
         try:
             fields, files = self.parse_multipart_form()
             order_record = build_order_record(fields, files)
-            order_record["notification"] = build_notification_state(
-                status="pending",
-                details="Waiting to send seller email.",
-            )
-            persist_order(order_record)
-            notification = send_order_notification(order_record)
-            order_record["notification"] = notification
+            order_record["notification"] = send_order_notification(order_record)
             persist_order(order_record)
         except ValidationError as exc:
             self.send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
             return
-        except NotificationError as exc:
-            details = str(exc)
-            if is_network_error(details):
-                order_record["notification"] = build_notification_state(
-                    status="queued",
-                    details=f"Network issue detected. Seller email queued for retry. Original error: {details}",
-                )
-            else:
-                order_record["notification"] = build_notification_state(
-                    status="failed",
-                    details=details,
-                )
-            persist_order(order_record)
-            print(f"Email notification issue for {order_record['orderId']}: {details}", file=sys.stderr)
         except Exception:
             self.send_json(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -190,8 +188,55 @@ class MemoryTilesHandler(SimpleHTTPRequestHandler):
                 "savedPhotos": len(order_record["photos"]),
                 "notificationStatus": order_record["notification"]["status"],
                 "notificationDetails": order_record["notification"]["details"],
+                "paymentUrl": order_record["payment"].get("checkoutUrl", ""),
             },
         )
+
+    def handle_contact_create(self) -> None:
+        try:
+            payload = self.parse_json_body()
+            message_record = build_contact_message(payload)
+            message_record["notification"] = send_contact_notification(message_record)
+            persist_contact_message(message_record)
+        except ValidationError as exc:
+            self.send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+            return
+        except Exception:
+            self.send_json(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                {"error": "Your message could not be sent right now."},
+            )
+            return
+
+        self.send_json(
+            HTTPStatus.CREATED,
+            {
+                "message": "Thanks! Your message was sent.",
+                "notificationStatus": message_record["notification"]["status"],
+                "notificationDetails": message_record["notification"]["details"],
+            },
+        )
+
+    def parse_json_body(self) -> dict[str, object]:
+        content_type = self.headers.get("Content-Type", "")
+        content_length = int(self.headers.get("Content-Length", "0"))
+
+        if "application/json" not in content_type:
+            raise ValidationError("Please send the contact form as JSON.")
+
+        if content_length <= 0:
+            raise ValidationError("The contact payload was empty.")
+
+        body = self.rfile.read(content_length)
+        try:
+            payload = json.loads(body.decode("utf-8"))
+        except json.JSONDecodeError as exc:
+            raise ValidationError("Contact payload was invalid.") from exc
+
+        if not isinstance(payload, dict):
+            raise ValidationError("Contact payload was invalid.")
+
+        return payload
 
     def parse_multipart_form(self) -> tuple[dict[str, str], list[dict[str, object]]]:
         content_type = self.headers.get("Content-Type", "")
@@ -257,21 +302,23 @@ class MemoryTilesHandler(SimpleHTTPRequestHandler):
 
 
 def build_order_record(fields: dict[str, str], files: list[dict[str, object]]) -> dict[str, object]:
-    missing_fields = [field for field in REQUIRED_FIELDS if not fields.get(field)]
+    missing_fields = [field for field in REQUIRED_ORDER_FIELDS if not fields.get(field)]
     if missing_fields:
-        raise ValidationError("Please complete all required customer and order fields.")
+        raise ValidationError("Please complete all required customer, payment, and order fields.")
 
+    payment_method = normalize_payment_method(fields.get("payment_method", ""))
     required_photo_count = parse_required_photo_count(fields)
+
     if len(files) < required_photo_count:
-        raise ValidationError(
-            f"Upload at least {required_photo_count} photos for this order."
-        )
+        raise ValidationError(f"Upload at least {required_photo_count} photos for this order.")
 
     if len(files) > MAX_FILE_COUNT:
         raise ValidationError(f"Upload no more than {MAX_FILE_COUNT} photos at a time.")
 
     if any(file_info["field_name"] != "photos" for file_info in files):
         raise ValidationError("Unexpected file field received.")
+
+    cart_items = parse_cart_items(fields, required_photo_count)
 
     total_bytes = 0
     pending_photos: list[dict[str, object]] = []
@@ -323,42 +370,31 @@ def build_order_record(fields: dict[str, str], files: list[dict[str, object]]) -
             }
         )
 
-    submitted_at = datetime.now(timezone.utc).isoformat()
-    notes = fields.get("notes", "")
-    phone = fields.get("phone", "")
-    cart_items = parse_cart_items(fields, required_photo_count)
     subtotal_usd = sum(
-        (Decimal(item["unitPriceUsd"]) * int(item["quantity"])).quantize(
-            Decimal("0.01"),
-            rounding=ROUND_HALF_UP,
-        )
+        (Decimal(item["unitPriceUsd"]) * Decimal(item["quantity"]))
+        .quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         for item in cart_items
     )
-    if subtotal_usd == Decimal("0.00"):
-        subtotal_usd = (UNIT_PRICE_USD * required_photo_count).quantize(
-            Decimal("0.01"),
-            rounding=ROUND_HALF_UP,
-        )
+
+    if subtotal_usd <= Decimal("0.00"):
+        subtotal_usd = (UNIT_PRICE_USD * required_photo_count).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     unit_price_display = (
-        format_usd(subtotal_usd / Decimal(required_photo_count))
+        format_usd((subtotal_usd / Decimal(required_photo_count)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
         if required_photo_count > 0
         else format_usd(UNIT_PRICE_USD)
     )
 
-    subtotal_usd = subtotal_usd.quantize(
-        Decimal("0.01"),
-        rounding=ROUND_HALF_UP,
-    )
+    submitted_at = datetime.now(timezone.utc).isoformat()
 
-    order_record = {
+    return {
         "orderId": order_id,
         "submittedAt": submitted_at,
         "storeName": STORE_NAME,
         "customer": {
             "name": fields["customer_name"],
             "email": fields["email"],
-            "phone": phone,
+            "phone": fields.get("phone", ""),
             "address": {
                 "street": fields["street_address"],
                 "city": fields["city"],
@@ -367,28 +403,47 @@ def build_order_record(fields: dict[str, str], files: list[dict[str, object]]) -
             },
         },
         "order": {
-            "productName": '2.5"x2.5" Square Magnet',
+            "productName": PRODUCT_NAME,
             "quantity": required_photo_count,
             "unitPriceUsd": unit_price_display,
             "subtotalUsd": format_usd(subtotal_usd),
-            "notes": notes,
+            "notes": fields.get("notes", ""),
             "cartItems": cart_items,
         },
+        "payment": {
+            "method": payment_method,
+            "status": "checkout_ready" if payment_method == "online" and PAYMENT_CHECKOUT_URL else "missing_checkout_url",
+            "checkoutUrl": PAYMENT_CHECKOUT_URL,
+            "details": "Online payment link is configured." if PAYMENT_CHECKOUT_URL else "Set PAYMENT_CHECKOUT_URL to enable online checkout.",
+            "updatedAt": submitted_at,
+        },
         "photos": saved_photos,
-        "notification": build_notification_state(
-            status="pending",
-            details="Order saved before seller notification was attempted.",
-        ),
+        "notification": build_notification_state("pending", "Notification not attempted yet."),
     }
 
-    return order_record
 
+def build_contact_message(payload: dict[str, object]) -> dict[str, object]:
+    name = str(payload.get("name", "")).strip()
+    email = str(payload.get("email", "")).strip()
+    message = str(payload.get("message", "")).strip()
 
-def persist_order(order_record: dict[str, object]) -> None:
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    ORDERS_DIR.mkdir(parents=True, exist_ok=True)
-    order_path = ORDERS_DIR / f"{order_record['orderId']}.json"
-    order_path.write_text(json.dumps(order_record, indent=2), encoding="utf-8")
+    if not name or not email or not message:
+        raise ValidationError("Please complete name, email, and message.")
+
+    if "@" not in email:
+        raise ValidationError("Please provide a valid email address.")
+
+    submitted_at = datetime.now(timezone.utc).isoformat()
+    message_id = f"MSG-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:6]}"
+
+    return {
+        "messageId": message_id,
+        "submittedAt": submitted_at,
+        "name": name,
+        "email": email,
+        "message": message,
+        "notification": build_notification_state("pending", "Notification not attempted yet."),
+    }
 
 
 def parse_required_photo_count(fields: dict[str, str]) -> int:
@@ -397,10 +452,17 @@ def parse_required_photo_count(fields: dict[str, str]) -> int:
         raise ValidationError("Select at least one magnet before checkout.")
 
     quantity = int(quantity_raw)
-    if quantity < 1 or quantity > 200:
+    if quantity < 1 or quantity > 500:
         raise ValidationError("Select a valid magnet quantity.")
 
     return quantity
+
+
+def normalize_payment_method(value: str) -> str:
+    method = value.strip().lower()
+    if method != "online":
+        raise ValidationError("Online payment is required for checkout.")
+    return method
 
 
 def parse_cart_items(fields: dict[str, str], required_photo_count: int) -> list[dict[str, object]]:
@@ -408,9 +470,10 @@ def parse_cart_items(fields: dict[str, str], required_photo_count: int) -> list[
     if not raw_cart:
         return [
             {
-                "productId": "default-square-magnet",
+                "productId": "single",
                 "name": PRODUCT_NAME,
                 "quantity": required_photo_count,
+                "magnetsPerUnit": 1,
                 "unitPriceUsd": format_usd(UNIT_PRICE_USD),
             }
         ]
@@ -424,20 +487,25 @@ def parse_cart_items(fields: dict[str, str], required_photo_count: int) -> list[
         raise ValidationError("Add at least one product to cart before checkout.")
 
     normalized: list[dict[str, object]] = []
-    running_quantity = 0
+    total_magnets = 0
 
     for index, raw_item in enumerate(payload, start=1):
         if not isinstance(raw_item, dict):
             raise ValidationError("A cart line item was invalid.")
 
         name = str(raw_item.get("name", "")).strip()
+        product_id = str(raw_item.get("productId", "")).strip() or f"item-{index}"
+        quantity_raw = raw_item.get("quantity")
+        magnets_per_unit = raw_item.get("magnetsPerUnit", 1)
+
         if not name:
             raise ValidationError(f"Cart item {index} is missing a product name.")
 
-        product_id = str(raw_item.get("productId", "")).strip() or f"item-{index}"
-        quantity_raw = raw_item.get("quantity")
         if not isinstance(quantity_raw, int) or quantity_raw < 1:
             raise ValidationError(f"Cart item {index} has an invalid quantity.")
+
+        if not isinstance(magnets_per_unit, int) or magnets_per_unit < 1:
+            raise ValidationError(f"Cart item {index} has an invalid magnets-per-unit value.")
 
         price_raw = str(raw_item.get("price", "")).strip()
         try:
@@ -448,31 +516,36 @@ def parse_cart_items(fields: dict[str, str], required_photo_count: int) -> list[
         if unit_price <= Decimal("0.00"):
             raise ValidationError(f"Cart item {index} has an invalid price.")
 
-        running_quantity += quantity_raw
+        total_magnets += quantity_raw * magnets_per_unit
+
         normalized.append(
             {
                 "productId": product_id,
                 "name": name,
                 "quantity": quantity_raw,
+                "magnetsPerUnit": magnets_per_unit,
                 "unitPriceUsd": format_usd(unit_price),
             }
         )
 
-    if running_quantity != required_photo_count:
-        raise ValidationError("Cart quantity does not match the checkout quantity.")
+    if total_magnets != required_photo_count:
+        raise ValidationError("Cart quantity does not match required photo count.")
 
     return normalized
 
 
-def build_notification_state(status: str, details: str) -> dict[str, object]:
-    return {
-        "channel": "email",
-        "status": status,
-        "details": details,
-        "to": ORDER_NOTIFICATION_TO,
-        "cc": ORDER_NOTIFICATION_CC,
-        "updatedAt": datetime.now(timezone.utc).isoformat(),
-    }
+def persist_order(order_record: dict[str, object]) -> None:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    ORDERS_DIR.mkdir(parents=True, exist_ok=True)
+    path = ORDERS_DIR / f"{order_record['orderId']}.json"
+    path.write_text(json.dumps(order_record, indent=2), encoding="utf-8")
+
+
+def persist_contact_message(message_record: dict[str, object]) -> None:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    MESSAGES_DIR.mkdir(parents=True, exist_ok=True)
+    path = MESSAGES_DIR / f"{message_record['messageId']}.json"
+    path.write_text(json.dumps(message_record, indent=2), encoding="utf-8")
 
 
 def notification_readiness() -> dict[str, object]:
@@ -487,23 +560,25 @@ def notification_readiness() -> dict[str, object]:
     }
 
 
+def payment_readiness() -> dict[str, object]:
+    return {
+        "onlinePaymentConfigured": bool(PAYMENT_CHECKOUT_URL),
+        "paymentCheckoutUrlConfigured": bool(PAYMENT_CHECKOUT_URL),
+    }
+
+
 def send_order_notification(order_record: dict[str, object]) -> dict[str, object]:
-    if not ORDER_NOTIFICATION_TO:
-        return build_notification_state(
-            status="skipped",
-            details="ORDER_NOTIFICATION_TO is not configured.",
-        )
+    recipients = ORDER_NOTIFICATION_TO
+    if not recipients:
+        return build_notification_state("skipped", "ORDER_NOTIFICATION_TO is not configured.")
 
     if not SMTP_HOST or not SMTP_FROM_EMAIL:
-        return build_notification_state(
-            status="skipped",
-            details="SMTP_HOST and SMTP_FROM_EMAIL are required for seller email alerts.",
-        )
+        return build_notification_state("skipped", "SMTP_HOST and SMTP_FROM_EMAIL are required.")
 
     message = EmailMessage()
-    message["Subject"] = build_notification_subject(order_record)
+    message["Subject"] = f"{STORE_NAME} order {order_record['orderId']}"
     message["From"] = SMTP_FROM_EMAIL
-    message["To"] = ", ".join(ORDER_NOTIFICATION_TO)
+    message["To"] = ", ".join(recipients)
     if ORDER_NOTIFICATION_CC:
         message["Cc"] = ", ".join(ORDER_NOTIFICATION_CC)
 
@@ -511,24 +586,52 @@ def send_order_notification(order_record: dict[str, object]) -> dict[str, object
     if customer_email:
         message["Reply-To"] = customer_email
 
-    message.set_content(build_notification_body(order_record))
-    deliver_email(message)
+    message.set_content(build_order_notification_body(order_record))
+    return deliver_email(message, recipients + ORDER_NOTIFICATION_CC)
 
-    return build_notification_state(
-        status="sent",
-        details="Seller notification email sent.",
+
+def send_contact_notification(message_record: dict[str, object]) -> dict[str, object]:
+    recipients = CONTACT_NOTIFICATION_TO or ORDER_NOTIFICATION_TO
+    if not recipients:
+        return build_notification_state("skipped", "CONTACT_NOTIFICATION_TO or ORDER_NOTIFICATION_TO is not configured.")
+
+    if not SMTP_HOST or not SMTP_FROM_EMAIL:
+        return build_notification_state("skipped", "SMTP_HOST and SMTP_FROM_EMAIL are required.")
+
+    message = EmailMessage()
+    message["Subject"] = f"{STORE_NAME} contact message from {message_record['name']}"
+    message["From"] = SMTP_FROM_EMAIL
+    message["To"] = ", ".join(recipients)
+
+    sender_email = str(message_record["email"]).strip()
+    if sender_email:
+        message["Reply-To"] = sender_email
+
+    message.set_content(
+        "\n".join(
+            [
+                f"Store: {STORE_NAME}",
+                f"Message ID: {message_record['messageId']}",
+                f"Submitted At: {message_record['submittedAt']}",
+                "",
+                f"Name: {message_record['name']}",
+                f"Email: {message_record['email']}",
+                "",
+                "Message:",
+                str(message_record["message"]),
+            ]
+        )
     )
 
-
-def build_notification_subject(order_record: dict[str, object]) -> str:
-    customer_name = str(order_record["customer"]["name"]).strip()
-    return f"{STORE_NAME} order {order_record['orderId']} from {customer_name}"
+    return deliver_email(message, recipients)
 
 
-def build_notification_body(order_record: dict[str, object]) -> str:
+def build_order_notification_body(order_record: dict[str, object]) -> str:
     customer = order_record["customer"]
     address = customer["address"]
     order = order_record["order"]
+    payment = order_record.get("payment", {})
+
     photo_lines = [
         (
             f"- {photo['storedName']} ({photo['sizeBytes']} bytes) "
@@ -536,13 +639,18 @@ def build_notification_body(order_record: dict[str, object]) -> str:
         )
         for photo in order_record["photos"]
     ]
-    site_line = PUBLIC_BASE_URL if PUBLIC_BASE_URL else "Not configured"
-    phone = customer["phone"] or "Not provided"
-    notes = order["notes"] or "None"
+
+    cart_lines = [
+        (
+            f"- {item['name']} | quantity: {item['quantity']} | "
+            f"magnets/unit: {item.get('magnetsPerUnit', 1)} | price: ${item['unitPriceUsd']}"
+        )
+        for item in order.get("cartItems", [])
+    ]
 
     lines = [
         f"Store: {STORE_NAME}",
-        f"Public page: {site_line}",
+        f"Public page: {PUBLIC_BASE_URL or 'Not configured'}",
         "",
         f"Order ID: {order_record['orderId']}",
         f"Submitted At: {order_record['submittedAt']}",
@@ -550,7 +658,7 @@ def build_notification_body(order_record: dict[str, object]) -> str:
         "Customer",
         f"- Name: {customer['name']}",
         f"- Email: {customer['email']}",
-        f"- Phone: {phone}",
+        f"- Phone: {customer['phone'] or 'Not provided'}",
         f"- Address: {address['street']}, {address['city']}, {address['state']} {address['zipCode']}",
         "",
         "Order",
@@ -558,7 +666,15 @@ def build_notification_body(order_record: dict[str, object]) -> str:
         f"- Quantity: {order['quantity']}",
         f"- Unit Price: ${order['unitPriceUsd']}",
         f"- Subtotal: ${order['subtotalUsd']}",
-        f"- Notes: {notes}",
+        f"- Notes: {order['notes'] or 'None'}",
+        "",
+        "Cart Items",
+        *cart_lines,
+        "",
+        "Payment",
+        f"- Method: {payment.get('method', 'online')}",
+        f"- Status: {payment.get('status', 'unknown')}",
+        f"- Checkout URL: {payment.get('checkoutUrl', '') or 'Not configured'}",
         "",
         f"Uploaded Photos ({len(order_record['photos'])})",
         *photo_lines,
@@ -567,10 +683,9 @@ def build_notification_body(order_record: dict[str, object]) -> str:
     return "\n".join(lines)
 
 
-def deliver_email(message: EmailMessage) -> None:
-    recipients = ORDER_NOTIFICATION_TO + ORDER_NOTIFICATION_CC
+def deliver_email(message: EmailMessage, recipients: list[str]) -> dict[str, object]:
     if not recipients:
-        raise NotificationError("No recipients were configured for seller email alerts.")
+        return build_notification_state("skipped", "No recipients configured.")
 
     try:
         if SMTP_USE_SSL:
@@ -583,7 +698,7 @@ def deliver_email(message: EmailMessage) -> None:
                 if SMTP_USERNAME or SMTP_PASSWORD:
                     server.login(SMTP_USERNAME, SMTP_PASSWORD)
                 server.send_message(message, to_addrs=recipients)
-            return
+            return build_notification_state("sent", "Email delivered.")
 
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as server:
             server.ehlo()
@@ -593,8 +708,32 @@ def deliver_email(message: EmailMessage) -> None:
             if SMTP_USERNAME or SMTP_PASSWORD:
                 server.login(SMTP_USERNAME, SMTP_PASSWORD)
             server.send_message(message, to_addrs=recipients)
+        return build_notification_state("sent", "Email delivered.")
     except Exception as exc:
-        raise NotificationError(f"Seller email was not delivered: {exc}") from exc
+        details = str(exc)
+        if is_network_error(details):
+            queue_email_message(message)
+            return build_notification_state("queued", f"Network issue. Email queued for retry. Error: {details}")
+        return build_notification_state("failed", f"Email send failed: {details}")
+
+
+def queue_email_message(message: EmailMessage) -> None:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    EMAIL_QUEUE_DIR.mkdir(parents=True, exist_ok=True)
+    file_name = f"email-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:6]}.eml"
+    (EMAIL_QUEUE_DIR / file_name).write_bytes(message.as_bytes())
+
+
+def build_notification_state(status: str, details: str) -> dict[str, object]:
+    return {
+        "channel": "email",
+        "status": status,
+        "details": details,
+        "to": ORDER_NOTIFICATION_TO,
+        "cc": ORDER_NOTIFICATION_CC,
+        "updatedAt": datetime.now(timezone.utc).isoformat(),
+    }
+
 
 def is_network_error(error_text: str) -> bool:
     lowered = error_text.lower()
@@ -610,6 +749,7 @@ def is_network_error(error_text: str) -> bool:
         )
     )
 
+
 def sanitize_name(value: str) -> str:
     return re.sub(r"[^a-zA-Z0-9_-]+", "-", value).strip("-_").lower()
 
@@ -622,6 +762,8 @@ def main() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     ORDERS_DIR.mkdir(parents=True, exist_ok=True)
     UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+    MESSAGES_DIR.mkdir(parents=True, exist_ok=True)
+    EMAIL_QUEUE_DIR.mkdir(parents=True, exist_ok=True)
 
     port = PORT
     if len(sys.argv) > 1:
@@ -641,10 +783,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-
