@@ -1,0 +1,15 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" role="img" aria-label="Magical Memories by Roswi logo">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#b85c38"/>
+      <stop offset="100%" stop-color="#365a49"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="320" rx="56" fill="url(#bg)"/>
+  <rect x="24" y="24" width="272" height="272" rx="44" fill="none" stroke="#f8efe4" stroke-opacity="0.5" stroke-width="4"/>
+  <path d="M78 205V96h26l22 35 22-35h26v109h-25v-66l-23 36h-1l-23-36v66z" fill="#fff"/>
+  <path d="M206 205V96h30c28 0 44 11 44 31 0 13-7 22-19 27 15 4 24 13 24 27 0 22-17 34-47 34zm25-66h17c10 0 15-4 15-11 0-8-6-12-17-12h-15zm0 45h20c10 0 16-4 16-12 0-8-6-12-17-12h-19z" fill="#fff"/>
+  <text x="160" y="284" fill="#f8efe4" font-family="Avenir Next, Trebuchet MS, sans-serif" font-size="18" font-weight="700" text-anchor="middle" letter-spacing="1.5">
+    MAGICAL MEMORIES BY ROSWI
+  </text>
+</svg>

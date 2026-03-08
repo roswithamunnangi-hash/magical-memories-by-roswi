@@ -1,0 +1,309 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Magical Memories by Roswi</title>
+    <meta
+      name="description"
+      content="Custom 2.5 x 2.5 square photo magnets with cart and photo uploads."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script defer src="./script.js"></script>
+  </head>
+  <body>
+    <div class="page-shell" id="top">
+      <header class="hero">
+        <nav class="topbar">
+          <a class="brand" href="#top">
+            <img class="brand-logo" src="./assets/logo.svg" alt="Magical Memories by Roswi logo" />
+            <span class="brand-name">Magical Memories by Roswi</span>
+          </a>
+          <div class="topbar-links">
+            <a
+              class="nav-link"
+              href="https://www.instagram.com/MagicalMemories_byRoswi/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              @MagicalMemories_byRoswi
+            </a>
+            <a class="nav-link" href="#order">Start an Order</a>
+          </div>
+        </nav>
+
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">Custom 2.5"x2.5" square magnets</p>
+            <h1>Build your magnet order in minutes.</h1>
+            <p class="hero-text">
+              Add your favorite magnet styles to cart, upload your photos, and place one complete
+              order for Magical Memories by Roswi.
+            </p>
+
+            <div class="hero-actions">
+              <a class="button button-primary" href="#packs">Shop now</a>
+              <a class="button button-secondary" href="#order">Checkout</a>
+            </div>
+
+            <a
+              class="instagram-card"
+              href="https://www.instagram.com/MagicalMemories_byRoswi/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span class="instagram-label">Instagram</span>
+              <strong>@MagicalMemories_byRoswi</strong>
+              <em>See recent work and message us directly</em>
+            </a>
+
+            <div class="trust-row">
+              <div>
+                <strong>Flat pricing</strong>
+                <span>From $8.99 per 2.5"x2.5" magnet</span>
+              </div>
+              <div>
+                <strong>Cart checkout</strong>
+                <span>Add multiple magnet styles in one order</span>
+              </div>
+              <div>
+                <strong>Photo upload</strong>
+                <span>Upload images directly while ordering</span>
+              </div>
+            </div>
+          </div>
+
+          <aside class="hero-display" aria-label="Magnet inspiration">
+            <figure class="display-card display-card-large">
+              <img
+                src="https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1400"
+                alt="Family photos on a wall"
+                loading="lazy"
+              />
+              <figcaption>
+                <strong>Memory Walls</strong>
+                <span>Turn your best moments into beautiful magnetic displays.</span>
+              </figcaption>
+            </figure>
+            <div class="display-column">
+              <figure class="display-card display-card-small">
+                <img
+                  src="https://images.unsplash.com/photo-1609220136736-443140cffec6?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1400"
+                  alt="Printed photos closeup"
+                  loading="lazy"
+                />
+                <figcaption>
+                  <strong>Gift Ready</strong>
+                  <span>Perfect for birthdays, baby showers, and anniversaries.</span>
+                </figcaption>
+              </figure>
+              <figure class="display-card display-card-small">
+                <img
+                  src="https://images.unsplash.com/photo-1471341971476-ae15ff5dd4ea?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1400"
+                  alt="Colorful family memories"
+                  loading="lazy"
+                />
+                <figcaption>
+                  <strong>Made With Care</strong>
+                  <span>Custom crafted by Magical Memories by Roswi.</span>
+                </figcaption>
+              </figure>
+            </div>
+          </aside>
+        </div>
+      </header>
+
+      <main>
+        <section class="section section-product" id="packs">
+          <div class="section-heading">
+            <p class="section-tag">Magnet Catalog</p>
+            <h2>Choose your favorite square magnets</h2>
+            <p>
+              All magnets are custom 2.5"x2.5". Add products to cart, then upload one photo per
+              magnet at checkout.
+            </p>
+          </div>
+
+          <div id="catalogGrid" class="catalog-grid" aria-live="polite"></div>
+
+          <div class="cart-box">
+            <div>
+              <p class="section-tag">Cart</p>
+              <h3>Items in your cart</h3>
+            </div>
+            <ul id="cartItems" class="cart-items"></ul>
+            <p id="emptyCartMessage" class="subtle-copy">Your cart is empty. Add a magnet to begin.</p>
+            <div class="cart-totals">
+              <div><span>Items</span><strong id="cartItemCount">0</strong></div>
+              <div><span>Subtotal</span><strong id="cartSubtotal">$0.00</strong></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section section-steps">
+          <div class="section-heading">
+            <p class="section-tag">How It Works</p>
+            <h2>Three-step order flow</h2>
+          </div>
+
+          <div class="steps-grid">
+            <article class="step-card">
+              <span>01</span>
+              <h3>Add to cart</h3>
+              <p>Pick your magnet styles and quantities.</p>
+            </article>
+            <article class="step-card">
+              <span>02</span>
+              <h3>Upload your photos</h3>
+              <p>Add at least one photo for each magnet in your cart.</p>
+            </article>
+            <article class="step-card">
+              <span>03</span>
+              <h3>Send the order</h3>
+              <p>Submit everything in one checkout form.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section section-order" id="order">
+          <div class="section-heading">
+            <p class="section-tag">Checkout</p>
+            <h2>Complete your order</h2>
+            <p>
+              Customers can submit details, upload photos, and include notes in one checkout step.
+            </p>
+          </div>
+
+          <div class="order-layout">
+            <form id="orderForm" class="order-form" enctype="multipart/form-data" novalidate>
+              <input type="hidden" name="product_quantity" id="productQuantity" value="1" />
+              <input type="hidden" name="cart_items_json" id="cartItemsJson" value="" />
+
+              <div class="form-section">
+                <h3>Customer details</h3>
+                <div class="form-grid">
+                  <label class="field field-wide">
+                    <span>Name</span>
+                    <input type="text" name="customer_name" placeholder="Full name" required />
+                  </label>
+                  <label class="field">
+                    <span>Email address (required)</span>
+                    <input
+                      type="email"
+                      name="email"
+                      placeholder="name@example.com"
+                      autocomplete="email"
+                      required
+                    />
+                  </label>
+                  <label class="field">
+                    <span>Phone</span>
+                    <input type="tel" name="phone" placeholder="Optional" />
+                  </label>
+                  <label class="field field-wide">
+                    <span>Street address</span>
+                    <input type="text" name="street_address" placeholder="123 Maple Street" required />
+                  </label>
+                  <label class="field">
+                    <span>City</span>
+                    <input type="text" name="city" placeholder="Chicago" required />
+                  </label>
+                  <label class="field">
+                    <span>State</span>
+                    <input type="text" name="state" placeholder="IL" maxlength="2" required />
+                  </label>
+                  <label class="field">
+                    <span>ZIP code</span>
+                    <input type="text" name="zip_code" placeholder="60612" required />
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <h3>Upload photos</h3>
+                <label class="upload-panel" for="photos">
+                  <span class="upload-title">Select photo files</span>
+                  <span class="upload-copy" id="photoHint">
+                    Upload at least 1 image for each magnet in your cart.
+                  </span>
+                  <input id="photos" name="photos" type="file" accept="image/*" multiple required />
+                </label>
+
+                <div class="upload-meta">
+                  <span id="photoCount">No photos selected yet</span>
+                  <span id="photoRequirement">1 photo required</span>
+                </div>
+                <p id="uploadSuggestion" class="subtle-copy">
+                  Start by adding magnets to cart so we can calculate required photos.
+                </p>
+
+                <ul id="photoPreview" class="photo-preview" aria-live="polite"></ul>
+              </div>
+
+              <div class="form-section">
+                <h3>Order notes</h3>
+                <label class="field">
+                  <span>Gift note, crop preference, or special instructions</span>
+                  <textarea
+                    name="notes"
+                    rows="5"
+                    placeholder="Example: Please keep faces centered and use the first photo as the main magnet."
+                  ></textarea>
+                </label>
+              </div>
+
+              <div class="form-section form-section-submit">
+                <label class="checkbox-field">
+                  <input type="checkbox" name="photo_rights" required />
+                  <span>I confirm I have permission to print these photos.</span>
+                </label>
+
+                <button id="submitButton" class="button button-primary button-submit" type="submit">
+                  Place order
+                </button>
+                <p id="formStatus" class="form-status" role="status" aria-live="polite"></p>
+              </div>
+            </form>
+
+            <aside class="summary-card">
+              <p class="section-tag">Live Summary</p>
+              <h3>Your order total</h3>
+
+              <dl class="summary-list">
+                <div>
+                  <dt>Product</dt>
+                  <dd id="summaryProduct">2.5"x2.5" Square Magnet</dd>
+                </div>
+                <div>
+                  <dt>Items in cart</dt>
+                  <dd id="summaryQuantity">1</dd>
+                </div>
+                <div>
+                  <dt>Unit price</dt>
+                  <dd id="summaryUnitPrice">Varies</dd>
+                </div>
+                <div>
+                  <dt>Photo minimum</dt>
+                  <dd id="summaryPhotoMinimum">1 image</dd>
+                </div>
+                <div>
+                  <dt>Subtotal</dt>
+                  <dd id="summarySubtotal">$0.00</dd>
+                </div>
+              </dl>
+
+              <div class="summary-total">
+                <span>Total</span>
+                <strong id="summaryTotal">$0.00</strong>
+              </div>
+
+              <p class="summary-note">
+                One uploaded photo is required for each magnet in the order.
+              </p>
+            </aside>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
